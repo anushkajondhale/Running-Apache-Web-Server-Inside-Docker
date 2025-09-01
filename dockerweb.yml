@@ -1,0 +1,57 @@
+- name: Deploy Web Page with Docker
+  hosts: node1
+  tasks:
+  - name: "configure yum for docker"
+    yum_repository:
+      name: docker
+      description: "yum repo for docker"
+      baseurl: "https://download.docker.com/linux/centos/7/x86_64/stable"
+      gpgcheck: no
+
+  - name: "install docker"
+    package:
+      name: "docker-ce"
+      state: present
+
+  - name: "start and enable docker"
+    service:
+      name: docker
+      state: started
+      enabled: yes
+
+  - name: "install python"
+    package:
+      name: python36
+      state: present
+
+  - name: "creating directory for my webpages"
+    file:
+      path: "/admin/webpages_docker"
+      state: directory
+
+  - name: "deploy webpage"
+    copy:
+      src: "myweb.html"
+      dest: "/admin/webpages_docker/myweb.html"
+
+  - name: "install python SDK for docker"
+    pip:
+      name: "docker"
+      state: present
+  - name: Pull the httpd image from docker hub
+    docker_image:
+      name: httpd
+      source: pull
+
+  - name: "launch docker container"
+    docker_container:
+      name: "mywebserver"
+      image: "httpd"
+      state: started
+      detach: true
+      interactive: true
+      exposed_ports: "80"
+      ports:
+      - "1234:80"
+      volumes:
+      - "/admin/webpages_docker/:/usr/local/apache2/htdocs/"
